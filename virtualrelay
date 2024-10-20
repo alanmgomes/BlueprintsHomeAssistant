@@ -1,0 +1,34 @@
+blueprint:
+  name: Virtual Relay
+  description: Turn On/Off all switchs/lights of the virtual relay group
+  domain: automation
+  input:
+    light_input:
+      name: Choose the light entities
+      selector:
+            entity:
+              domain:
+                - light
+              multiple: true
+
+trigger:
+  platform: state
+  entity_id: !input light_input
+
+action:
+  - service: >
+      {% if trigger.to_state.state == "on" %}
+        homeassistant.turn_on
+      {% elif trigger.to_state.state == "off" %}
+        homeassistant.turn_off
+      {% endif %}
+    target:
+      entity_id:
+        !input light_input
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 1
+      milliseconds: 0
+
+mode: single
