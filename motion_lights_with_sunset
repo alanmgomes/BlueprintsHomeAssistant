@@ -1,0 +1,87 @@
+blueprint:
+  name: Motion Lights (Mixed Sunset/Always-On)
+  description: Control two sets of lights based on occupancy. One set only triggers after sunset; the other triggers 24/7.
+  domain: automation
+  input:
+    motion_entity:
+      name: Occupancy Sensor
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: occupancy
+    sunset_lights:
+      name: Sunset-Only Lights
+      description: These lights only turn on if it is past the sunset offset.
+      default: {}
+      selector:
+        target:
+          entity:
+            domain: light
+    always_lights:
+      name: Always-Active Lights
+      description: These lights turn on every time motion is detected, day or night.
+      default: {}
+      selector:
+        target:
+          entity:
+            domain: light
+    off_delay:
+      name: Turn off delay
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+    sunset_offset:
+      name: Sunset Offset
+      description: "e.g., -00:30:00"
+      default: "-00:30:00"
+      selector:
+        text:
+
+mode: restart
+
+trigger:
+  - platform: state
+    entity_id: !input motion_entity
+    from: "off"
+    to: "on"
+    id: detect
+  - platform: state
+    entity_id: !input motion_entity
+    from: "on"
+    to: "off"
+    id: clear
+
+action:
+  - choose:
+      # --- MOTION DETECTED ---
+      - conditions:
+          - condition: trigger
+            id: detect
+        sequence:
+          # Turn on Always-Active lights immediately
+          - action: light.turn_on
+            target: !input always_lights
+          # Turn on Sunset lights ONLY if it's dark
+          - if:
+              - condition: sun
+                after: sunset
+                after_offset: !input sunset_offset
+            then:
+              - action: light.turn_on
+                target: !input sunset_lights
+
+      # --- MOTION CLEARED ---
+      - conditions:
+          - condition: trigger
+            id: clear
+        sequence:
+          - delay:
+              seconds: !input off_delay
+          # Turn off both sets regardless of time
+          - action: light.turn_off
+            target: !input always_lights
+          - action: light.turn_off
+            target: !input sunset_lights
