@@ -1,6 +1,6 @@
 blueprint:
   name: Motion Lights (Mixed Sunset/Always-On)
-  description: Control two sets of lights based on occupancy. One set only triggers after sunset; the other triggers 24/7.
+  description: Control two sets of lights based on occupancy. One set only triggers from sunset to sunrise; the other triggers 24/7.
   domain: automation
   input:
     motion_entity:
@@ -11,7 +11,7 @@ blueprint:
           device_class: occupancy
     sunset_lights:
       name: Sunset-Only Lights
-      description: These lights only turn on if it is past the sunset offset.
+      description: These lights turn on only between sunset and sunrise.
       default: {}
       selector:
         target:
@@ -19,7 +19,7 @@ blueprint:
             domain: light
     always_lights:
       name: Always-Active Lights
-      description: These lights turn on every time motion is detected, day or night.
+      description: These lights turn on every time motion is detected, 24/7.
       default: {}
       selector:
         target:
@@ -35,6 +35,12 @@ blueprint:
           unit_of_measurement: seconds
     sunset_offset:
       name: Sunset Offset
+      description: "e.g., -00:30:00"
+      default: "-00:30:00"
+      selector:
+        text:
+    sunrise_offset:
+      name: Sunrise Offset
       description: "e.g., -00:30:00"
       default: "-00:30:00"
       selector:
@@ -61,14 +67,16 @@ action:
           - condition: trigger
             id: detect
         sequence:
-          # Turn on Always-Active lights immediately
           - action: light.turn_on
             target: !input always_lights
-          # Turn on Sunset lights ONLY if it's dark
+          
+          # Fixed: Now checks across midnight properly
           - if:
               - condition: sun
                 after: sunset
                 after_offset: !input sunset_offset
+                before: sunrise
+                before_offset: !input sunrise_offset
             then:
               - action: light.turn_on
                 target: !input sunset_lights
@@ -80,7 +88,6 @@ action:
         sequence:
           - delay:
               seconds: !input off_delay
-          # Turn off both sets regardless of time
           - action: light.turn_off
             target: !input always_lights
           - action: light.turn_off
