@@ -1,6 +1,6 @@
 blueprint:
   name: Motion Lights (Mixed Sunset/Always-On)
-  description: Control two sets of lights based on occupancy. One set only triggers from sunset to sunrise; the other triggers 24/7.
+  description: Control two sets of lights based on occupancy. Safely ignores blank inputs.
   domain: automation
   input:
     motion_entity:
@@ -48,6 +48,11 @@ blueprint:
 
 mode: restart
 
+# Define variables so we can check if the inputs are empty
+variables:
+  always_target: !input always_lights
+  sunset_target: !input sunset_lights
+
 trigger:
   - platform: state
     entity_id: !input motion_entity
@@ -67,11 +72,18 @@ action:
           - condition: trigger
             id: detect
         sequence:
-          - action: light.turn_on
-            target: !input always_lights
-          
-          # Fixed: Now checks across midnight properly
+          # Only fire if Always-Active lights were selected
           - if:
+              - condition: template
+                value_template: "{{ always_target != {} and always_target != null }}"
+            then:
+              - action: light.turn_on
+                target: !input always_lights
+          
+          # Only fire if Sunset lights were selected AND it is dark out
+          - if:
+              - condition: template
+                value_template: "{{ sunset_target != {} and sunset_target != null }}"
               - condition: sun
                 after: sunset
                 after_offset: !input sunset_offset
@@ -88,7 +100,19 @@ action:
         sequence:
           - delay:
               seconds: !input off_delay
-          - action: light.turn_off
-            target: !input always_lights
-          - action: light.turn_off
-            target: !input sunset_lights
+              
+          # Safely turn off Always-Active lights if they exist
+          - if:
+              - condition: template
+                value_template: "{{ always_target != {} and always_target != null }}"
+            then:
+              - action: light.turn_off
+                target: !input always_lights
+                
+          # Safely turn off Sunset lights if they exist
+          - if:
+              - condition: template
+                value_template: "{{ sunset_target != {} and sunset_target != null }}"
+            then:
+              - action: light.turn_off
+                target: !input sunset_lights
