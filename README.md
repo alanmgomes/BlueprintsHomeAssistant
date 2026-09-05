@@ -3,3 +3,4 @@
 
 - Blueprint Name: Motion Lights (Mixed Sunset/Always-On)
 - Description: Control two sets of lights based on occupancy. Safely ignores blank inputs and adjusts sunset/sunrise times with configurable offsets.
+
