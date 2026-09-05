@@ -1,0 +1,33 @@
+# Este é um .gitignore padrão para projetos Node.js
+# Ignora arquivos de build gerados automaticamente e logs temporários
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Ignora caches do node_modules
+/node_modules
+/.cache
+
+# Ignora arquivos de configuração de desenvolvimento que são gerados automaticamente ou podem ser diferentes em cada máquina
+.env
+.env.example
+config/local.json
+package-lock.json
+yarn.lock
+
+# Ignora arquivos de build de Rust
+/target/
+
+code-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+*.swp
+.DS_Store
+Thumbs.db
